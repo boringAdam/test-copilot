@@ -11,19 +11,16 @@ client = OpenAI()
 
 class ChatIn(BaseModel):
     message: str
+    history: List[Dict[str, str]] = []
 
 
 @app.post("/ai/chat")
 def ai_chat(body: ChatIn):
     try:
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=100,
-            messages=[
-                {"role": "system", "content": "You are a helpful construction estimator copilot."},
-                {"role": "user", "content": body.message},
-            ],
-        )
+        msgs = [{"role":"system","content":"You are a helpful construction estimator copilot."}]
+        msgs += body.history
+        msgs += [{"role":"user","content": body.message}]
+        resp = client.chat.completions.create(model="gpt-4o-mini", max_tokens=300, messages=msgs)
         return {"reply": resp.choices[0].message.content}
     except RateLimitError:
         # clean 429 to frontend
